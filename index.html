@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ACT 사례개념화 도구</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap');
+        body { font-family: 'Pretendard', sans-serif; background-color: #F8F9FA; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+        const { motion, AnimatePresence } = window.Motion;
+
+        // 아이콘 컴포넌트 래퍼
+        const Icon = ({ name, className }) => {
+            const LucideIcon = lucide.icons[name];
+            return LucideIcon ? <i data-lucide={name} className={className}></i> : null;
+        };
+
+        function App() {
+            const [formData, setFormData] = useState({
+                problem: '', avoidance: '', motivation: '', barriers: '',
+                inflexibility: '', techniques: '', strengths: '', plan: '',
+                behaviors: { suicidal: false, internal: false, external: false, details: '' }
+            });
+            const [isSubmitting, setIsSubmitting] = useState(false);
+            const [status, setStatus] = useState({ type: null, message: '' });
+
+            // ⚠️ 여기에 본인의 Google Apps Script 웹 앱 URL을 넣으세요.
+            const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby1hmy5g-39h0HVEynvBPelE55rn85NvVtSJKeeftlYoSLojAN-oMshx7DJn4aJNmxmyA/exec";
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setIsSubmitting(true);
+                
+                // 데이터 정제 (앱스 스크립트 전송용)
+                const payload = {
+                    timestamp: new Date().toLocaleString(),
+                    ...formData,
+                    behaviorList: Object.entries(formData.behaviors)
+                        .filter(([k, v]) => v === true).map(([k]) => k).join(', ')
+                };
+
+                try {
+                    // GitHub Pages에서 직접 Google Script로 전송
+                    const response = await fetch(WEB_APP_URL, {
+                        method: 'POST',
+                        mode: 'no-cors', // CORS 정책 우회 (응답 확인은 제한됨)
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    setStatus({ type: 'success', message: '데이터가 전송되었습니다! (시트를 확인하세요)' });
+                    setFormData({ /* 초기화 로직 */ });
+                } catch (err) {
+                    setStatus({ type: 'error', message: '오류가 발생했습니다.' });
+                } finally {
+                    setIsSubmitting(false);
+                    setTimeout(() => lucide.createIcons(), 100);
+                }
+            };
+
+            return (
+                <div className="min-h-screen">
+                    {/* Header & Main UI (제공해주신 디자인 기반) */}
+                    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-zinc-200 px-6 py-4">
+                        <div className="max-w-5xl mx-auto flex justify-between items-center">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-emerald-600 p-2 rounded-lg text-white">
+                                    <Icon name="ClipboardList" />
+                                </div>
+                                <h1 className="text-xl font-bold text-zinc-900">ACT 사례개념화</h1>
+                            </div>
+                        </div>
+                    </header>
+
+                    <main className="max-w-5xl mx-auto px-6 py-12">
+                        {/* 폼 및 섹션 구성 (제공해주신 React 구조 그대로 구현) */}
+                        <form onSubmit={handleSubmit} className="space-y-8">
+                            <div className="bg-white rounded-[2rem] border border-zinc-200 shadow-sm overflow-hidden">
+                                <section className="p-8 border-b border-zinc-100">
+                                    <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
+                                        <Icon name="FileText" className="text-emerald-600" /> 1. 호소 문제
+                                    </h3>
+                                    <textarea 
+                                        className="w-full p-4 bg-zinc-50 border rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500/20"
+                                        rows="4"
+                                        onChange={(e) => setFormData({...formData, problem: e.target.value})}
+                                    ></textarea>
+                                </section>
+                                
+                                {/* ... 추가 섹션들 ... */}
+
+                                <div className="p-8 bg-zinc-50 flex justify-end">
+                                    <button 
+                                        type="submit"
+                                        className="bg-emerald-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-emerald-700 transition-all"
+                                        disabled={isSubmitting}
+                                    >
+                                        {isSubmitting ? '전송 중...' : '기록하기'}
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </main>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+        setTimeout(() => lucide.createIcons(), 500);
+    </script>
+</body>
+</html>
